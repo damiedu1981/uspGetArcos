@@ -1,0 +1,224 @@
+select distinct * from
+(select X as Latitud, Y as Longitud, p.name as arco ,p.id as idBusqueda from Learn52ID.dbo.Events_Local e ,Learn52ID.dbo.Profile p where e.ClientID=p.userid 
+and P.ID  between 5 and 28 and X is not null and Y is not null and X <> 0 and Y <> 0
+group by  X, Y, p.name,p.id  union select X as Latitud, Y as Longitud, p.name as arco, p.id as idBusqueda
+from dbo.Events_Local_NoneGPS e ,Learn52ID.dbo.Profile p where e.ClientID=p.userid 
+and P.ID  between 5 and 28 and X is not null and Y is not null and X <> 0 and Y <> 0  group by X, Y,p.name,p.id ) as a order by idBusqueda
+
+
+
+------------------------------
+
+DECLARE @List nvarchar(4000)
+SET @List = '5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30'
+
+BEGIN
+
+  IF OBJECT_ID('tempdb..#MyTablaTemp') IS NOT NULL     
+      DROP TABLE #MyTablaTemp
+  CREATE TABLE #MyTablaTemp
+  ([Id] INT NOT NULL)
+
+
+  DECLARE    @pos        int,
+             @nextpos    int,
+             @valuelen   int
+
+     SELECT @pos = 0, @nextpos = 1
+
+     WHILE @nextpos > 0
+     BEGIN
+        SELECT @nextpos = charindex(',', @list, @pos + 1)
+        SELECT @valuelen = CASE WHEN @nextpos > 0
+                                THEN @nextpos
+                                ELSE len(@list) + 1
+                           END - @pos - 1
+        INSERT #MyTablaTemp (id)
+           VALUES (convert(int, substring(@list, @pos + 1, @valuelen)))
+        SELECT @pos = @nextpos
+     END
+
+END
+
+
+(select X as Latitud, Y as Longitud, p.name as arco ,p.id as idBusqueda 
+from Learn52ID.dbo.Events_Local e ,Learn52ID.dbo.Profile p
+where e.ClientID=p.userid 
+and X is not null and Y is not null and X <> 0 and Y <> 0
+and P.ID  in  (select id from #MyTablaTemp )
+group by  X, Y, p.name,p.id  
+union 
+select X as Latitud, Y as Longitud, p.name as arco, p.id as idBusqueda
+from dbo.Events_Local_NoneGPS e ,Learn52ID.dbo.Profile p
+where e.ClientID=p.userid 
+and X is not null and Y is not null and X <> 0 and Y <> 0
+and P.ID  in   (select id from #MyTablaTemp)
+group by X, Y,p.name,p.id) order by p.id
+
+
+-------------------------------
+
+DECLARE @List nvarchar(4000)
+SET @List = '5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30'
+
+BEGIN
+
+  IF OBJECT_ID('tempdb..#MyTablaTemp') IS NOT NULL     
+      DROP TABLE #MyTablaTemp
+  CREATE TABLE #MyTablaTemp
+  ([Id] INT NOT NULL)
+
+
+  DECLARE    @pos        int,
+             @nextpos    int,
+             @valuelen   int
+
+     SELECT @pos = 0, @nextpos = 1
+
+     WHILE @nextpos > 0
+     BEGIN
+        SELECT @nextpos = charindex(',', @list, @pos + 1)
+        SELECT @valuelen = CASE WHEN @nextpos > 0
+                                THEN @nextpos
+                                ELSE len(@list) + 1
+                           END - @pos - 1
+        INSERT #MyTablaTemp (id)
+           VALUES (convert(int, substring(@list, @pos + 1, @valuelen)))
+        SELECT @pos = @nextpos
+     END
+
+END
+select a.Latitud ,A.Longitud,a.arco,a.idBusqueda from 
+(select X as Latitud, Y as Longitud, p.name as Arco ,p.id as IdBusqueda, ROW_NUMBER() OVER(PARTITION BY  p.name 
+                                 ORDER BY p.id DESC) AS rownumber
+from Events_Local e ,Learn52ID.dbo.Profile p
+where e.ClientID=p.userid 
+and X is not null and Y is not null and X <> 0 and Y <> 0
+and P.ID  in  (select id from #MyTablaTemp )
+group by X, Y, p.name,p.id
+union 
+select X as Latitud, Y as Longitud, p.name as arco, p.id as idBusqueda, ROW_NUMBER() OVER(PARTITION BY  p.name 
+                                 ORDER BY p.id DESC) AS rownumber
+from Events_Local_NoneGPS e ,Learn52ID.dbo.Profile p
+where e.ClientID=p.userid 
+and X is not null and Y is not null and X <> 0 and Y <> 0
+and P.ID  in   (select id from #MyTablaTemp)
+group by X, Y, p.name,p.id) as a where a.rownumber=1 order by a.idBusqueda
+
+
+
+
+
+---------------------
+
+
+
+USE Learn52ID;
+ 
+CREATE PROCEDURE GetArcosById  
+    @ListIdsToFind nvarchar(max)   
+     
+AS   
+SET NOCOUNT OFF;  
+BEGIN
+
+  IF OBJECT_ID('tempdb..#MyTablaTemp') IS NOT NULL     
+      DROP TABLE #MyTablaTemp
+  CREATE TABLE #MyTablaTemp
+  ([Id] INT NOT NULL)
+
+
+  DECLARE    @pos        int,
+             @nextpos    int,
+             @valuelen   int
+
+     SELECT @pos = 0, @nextpos = 1
+
+     WHILE @nextpos > 0
+     BEGIN
+        SELECT @nextpos = charindex(',', @ListIdsToFind, @pos + 1)
+        SELECT @valuelen = CASE WHEN @nextpos > 0
+                                THEN @nextpos
+                                ELSE len(@ListIdsToFind) + 1
+                           END - @pos - 1
+        INSERT #MyTablaTemp (id)
+           VALUES (convert(int, substring(@ListIdsToFind, @pos + 1, @valuelen)))
+        SELECT @pos = @nextpos
+     END
+
+
+select a.Latitud ,A.Longitud,a.arco,a.idBusqueda from 
+(select X as Latitud, Y as Longitud, p.name as Arco ,p.id as IdBusqueda, ROW_NUMBER() OVER(PARTITION BY  p.name 
+                                 ORDER BY p.id DESC) AS rownumber
+from Events_Local e ,Learn52ID.dbo.Profile p
+where e.ClientID=p.userid 
+and X is not null and Y is not null and X <> 0 and Y <> 0
+and P.ID  in  (select id from #MyTablaTemp )
+group by X, Y, p.name,p.id
+union 
+select X as Latitud, Y as Longitud, p.name as arco, p.id as idBusqueda, ROW_NUMBER() OVER(PARTITION BY  p.name 
+                                 ORDER BY p.id DESC) AS rownumber
+from Events_Local_NoneGPS e ,Learn52ID.dbo.Profile p
+where e.ClientID=p.userid 
+and X is not null and Y is not null and X <> 0 and Y <> 0
+and P.ID  in   (select id from #MyTablaTemp)
+group by X, Y, p.name,p.id) as a where a.rownumber=1 order by a.idBusqueda 
+ 
+END
+
+
+------------------------------
+
+
+USE Learn52ID;
+GO  
+CREATE PROCEDURE GetArcosById  
+    @ListIdsToFind nvarchar(max)   
+     
+AS   
+SET NOCOUNT OFF;  
+BEGIN
+
+  IF OBJECT_ID('tempdb..#MyTablaTemp') IS NOT NULL     
+      DROP TABLE #MyTablaTemp
+  CREATE TABLE #MyTablaTemp
+  ([Id] INT NOT NULL)
+
+
+  DECLARE    @pos        int,
+             @nextpos    int,
+             @valuelen   int
+
+     SELECT @pos = 0, @nextpos = 1
+
+     WHILE @nextpos > 0
+     BEGIN
+        SELECT @nextpos = charindex(',', @ListIdsToFind, @pos + 1)
+        SELECT @valuelen = CASE WHEN @nextpos > 0
+                                THEN @nextpos
+                                ELSE len(@ListIdsToFind) + 1
+                           END - @pos - 1
+        INSERT #MyTablaTemp (id)
+           VALUES (convert(int, substring(@ListIdsToFind, @pos + 1, @valuelen)))
+        SELECT @pos = @nextpos
+     END
+
+
+select a.Latitud ,A.Longitud,a.arco,a.idBusqueda from 
+(select X as Latitud, Y as Longitud, p.name as Arco ,p.id as IdBusqueda, ROW_NUMBER() OVER(PARTITION BY  p.name 
+                                 ORDER BY p.id DESC) AS rownumber
+from Events_Local e ,Learn52ID.dbo.Profile p
+where e.ClientID=p.userid 
+and X is not null and Y is not null and X <> 0 and Y <> 0
+and P.ID  in  (select id from #MyTablaTemp )
+group by X, Y, p.name,p.id
+union 
+select X as Latitud, Y as Longitud, p.name as arco, p.id as idBusqueda, ROW_NUMBER() OVER(PARTITION BY  p.name 
+                                 ORDER BY p.id DESC) AS rownumber
+from Events_Local_NoneGPS e ,Learn52ID.dbo.Profile p
+where e.ClientID=p.userid 
+and X is not null and Y is not null and X <> 0 and Y <> 0
+and P.ID  in   (select id from #MyTablaTemp)
+group by X, Y, p.name,p.id) as a where a.rownumber=1 order by a.idBusqueda 
+END
+GO  
